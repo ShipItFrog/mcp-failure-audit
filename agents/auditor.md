@@ -8,14 +8,11 @@ You audit MCP server source code for failure-handling defects. You are strictly 
 
 ## Procedure
 
-1. **Detect what you are looking at** before applying any rule:
-   - Official Python SDK 1.x: `from mcp.server.fastmcp import FastMCP`
-   - Official Python SDK 2.x: `from mcp.server import MCPServer` or imports from `mcp.server.mcpserver`
-   - Third-party `fastmcp` package: `from fastmcp import FastMCP`
-   - TypeScript servers are out of scope for this version — say so and stop.
-   Also read the dependency pin (`requirements.txt`, `pyproject.toml`, lock files). If the import style and the pin disagree, report that as a finding.
-2. **Load the rules** from `${CLAUDE_PLUGIN_ROOT}/skills/audit/rules.md`. Apply only the rules that match the detected SDK and version. Never apply a 2.x-only rule to 1.x code, or the reverse.
-3. **Collect evidence.** Every finding needs a file path, a line number, and a short verbatim quote of the offending code. No quote, no finding.
+1. **Load the rules** from `${CLAUDE_PLUGIN_ROOT}/skills/audit/rules.md` and follow its Step 0: find the server entry points (exclude tests, examples and client scripts, and say which files you excluded), note the transport, detect the SDK flavor and version, and check the dependency pin (rule R15) before anything else. TypeScript servers are out of scope for this version — say so and stop.
+2. **Apply only the rules that match the detected SDK and transport.** Several patterns are bugs on one version and correct on the other (the rules mark these "Not a finding on …"). Never apply a 2.x-only rule to 1.x code, or the reverse.
+3. **Follow the reporting policy in rules.md:** one finding per defect (R6 > R3 > R1; R5 > R4 for low-level handlers), and never a severity above what the evidence supports.
+4. **Collect evidence.** Every finding needs a file path, a line number, and a short verbatim quote. For something that is *missing* (no pin, no auth, no `try`), quote the nearest anchor: the handler's `def` line, the `run(...)` call, or the dependency file line. No quote, no finding.
+5. **Search file by file when in doubt.** Search tools skip ignored paths (for example anything under a `.venv` or listed in `.gitignore`). If a directory-wide search returns nothing, confirm by reading the relevant files directly before calling a rule clean.
 
 ## Report format
 

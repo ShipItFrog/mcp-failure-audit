@@ -1,0 +1,16 @@
+[
+  {"note": "R1 get_note (missing)", "method": "tools/call", "params": {"name": "get_note", "arguments": {"name": "missing"}}},
+  {"note": "R3 add_note (empty name)", "method": "tools/call", "params": {"name": "add_note", "arguments": {"name": " ", "text": "x"}}},
+  {"note": "R4 connect_db (unhandled exception)", "method": "tools/call", "params": {"name": "connect_db", "arguments": {}}},
+  {"note": "R4 load_config (str(e) in ToolError)", "method": "tools/call", "params": {"name": "load_config", "arguments": {}}},
+  {"note": "R2 check_backend (McpError in tool)", "method": "tools/call", "params": {"name": "check_backend", "arguments": {}}},
+  {"note": "R6 strict_lookup (is_error on 1.x model)", "method": "tools/call", "params": {"name": "strict_lookup", "arguments": {"name": "missing"}}},
+  {"note": "R11 read_file (traversal attempt)", "method": "tools/call", "params": {"name": "read_file", "arguments": {"relative": "../../secrets.txt"}}},
+  {"note": "R7 debug_echo (print in handler)", "method": "tools/call", "params": {"name": "debug_echo", "arguments": {"msg": "hi"}}},
+  {"note": "R7 debug_echo (~9 KB message forces a buffer flush)", "method": "tools/call", "params": {"name": "debug_echo", "arguments": {"msg": "0123456789"}}, "repeat_args": {"msg": 900}},
+  {"note": "R7 follow-up: is the session still usable?", "method": "tools/call", "params": {"name": "get_note", "arguments": {"name": "welcome"}}},
+  {"note": "control: log_something (ctx.info)", "method": "tools/call", "params": {"name": "log_something", "arguments": {}}},
+  {"note": "R13 resource (missing)", "method": "resources/read", "params": {"uri": "notes://missing"}},
+  {"note": "control: resource (exists)", "method": "resources/read", "params": {"uri": "notes://welcome"}},
+  {"note": "control: unknown tool", "method": "tools/call", "params": {"name": "no_such_tool", "arguments": {}}}
+]

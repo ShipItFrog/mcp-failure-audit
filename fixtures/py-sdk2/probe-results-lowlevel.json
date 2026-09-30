@@ -1,0 +1,120 @@
+{
+  "script": "py-sdk2/lowlevel_server.py",
+  "records": [
+    {
+      "method": "initialize",
+      "summary": "{\"capabilities\": {\"experimental\": {}, \"tools\": {\"listChanged\": false}}, \"protocolVersion\": \"2025-06-18\", \"serverInfo\": {\"name\": \"fixture-lowlevel-sdk2\", \"version\": \"\"}}",
+      "stray_stdout": [],
+      "negotiated": "2025-06-18"
+    },
+    {
+      "note": "control: stock (known item)",
+      "method": "tools/call",
+      "params": {
+        "name": "stock",
+        "arguments": {
+          "item": "apple"
+        }
+      },
+      "summary": "isError=False | 3",
+      "stray_stdout": [],
+      "raw": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "result": {
+          "content": [
+            {
+              "text": "3",
+              "type": "text"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "note": "R5 stock (unknown item -> KeyError escapes handler)",
+      "method": "tools/call",
+      "params": {
+        "name": "stock",
+        "arguments": {
+          "item": "pear"
+        }
+      },
+      "summary": "JSON-RPC error 0: 'pear'",
+      "stray_stdout": [],
+      "raw": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "error": {
+          "code": 0,
+          "message": "'pear'"
+        }
+      }
+    },
+    {
+      "note": "R3/R5 stock (argument missing -- never validated)",
+      "method": "tools/call",
+      "params": {
+        "name": "stock",
+        "arguments": {}
+      },
+      "summary": "JSON-RPC error 0: 'item'",
+      "stray_stdout": [],
+      "raw": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "error": {
+          "code": 0,
+          "message": "'item'"
+        }
+      }
+    }
+  ],
+  "notifications": [],
+  "stdout_after_shutdown": [],
+  "stderr_tail": [
+    "handler for 'tools/call' raised",
+    "Traceback (most recent call last):",
+    "  File \"<repo>\\fixtures\\py-sdk2\\.venv\\Lib\\site-packages\\mcp\\shared\\jsonrpc_dispatcher.py\", line 720, in _handle_request",
+    "    result = await on_request(dctx, req.method, req.params)",
+    "             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"<repo>\\fixtures\\py-sdk2\\.venv\\Lib\\site-packages\\mcp\\server\\runner.py\", line 747, in on_request",
+    "    return await runner.on_request(dctx, method, params)",
+    "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"<repo>\\fixtures\\py-sdk2\\.venv\\Lib\\site-packages\\mcp\\server\\runner.py\", line 230, in _on_request",
+    "    result = _dump_result(await call(ctx))",
+    "                          ^^^^^^^^^^^^^^^",
+    "  File \"<repo>\\fixtures\\py-sdk2\\.venv\\Lib\\site-packages\\mcp\\server\\_otel.py\", line 44, in __call__",
+    "    result = await call_next(ctx)",
+    "             ^^^^^^^^^^^^^^^^^^^^",
+    "  File \"<repo>\\fixtures\\py-sdk2\\.venv\\Lib\\site-packages\\mcp\\server\\runner.py\", line 217, in _inner",
+    "    result = await entry.handler(ctx, typed_params)",
+    "             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"<repo>\\fixtures\\py-sdk2\\lowlevel_server.py\", line 36, in call_tool",
+    "    count = INVENTORY[params.arguments[\"item\"]]",
+    "            ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "KeyError: 'pear'",
+    "handler for 'tools/call' raised",
+    "Traceback (most recent call last):",
+    "  File \"<repo>\\fixtures\\py-sdk2\\.venv\\Lib\\site-packages\\mcp\\shared\\jsonrpc_dispatcher.py\", line 720, in _handle_request",
+    "    result = await on_request(dctx, req.method, req.params)",
+    "             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"<repo>\\fixtures\\py-sdk2\\.venv\\Lib\\site-packages\\mcp\\server\\runner.py\", line 747, in on_request",
+    "    return await runner.on_request(dctx, method, params)",
+    "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"<repo>\\fixtures\\py-sdk2\\.venv\\Lib\\site-packages\\mcp\\server\\runner.py\", line 230, in _on_request",
+    "    result = _dump_result(await call(ctx))",
+    "                          ^^^^^^^^^^^^^^^",
+    "  File \"<repo>\\fixtures\\py-sdk2\\.venv\\Lib\\site-packages\\mcp\\server\\_otel.py\", line 44, in __call__",
+    "    result = await call_next(ctx)",
+    "             ^^^^^^^^^^^^^^^^^^^^",
+    "  File \"<repo>\\fixtures\\py-sdk2\\.venv\\Lib\\site-packages\\mcp\\server\\runner.py\", line 217, in _inner",
+    "    result = await entry.handler(ctx, typed_params)",
+    "             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"<repo>\\fixtures\\py-sdk2\\lowlevel_server.py\", line 36, in call_tool",
+    "    count = INVENTORY[params.arguments[\"item\"]]",
+    "                      ~~~~~~~~~~~~~~~~^^^^^^^^",
+    "KeyError: 'item'"
+  ]
+}

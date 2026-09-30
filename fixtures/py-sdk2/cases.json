@@ -1,0 +1,20 @@
+[
+  {"note": "R1 get_note (missing)", "method": "tools/call", "params": {"name": "get_note", "arguments": {"name": "missing"}}},
+  {"note": "R3 add_note (empty name)", "method": "tools/call", "params": {"name": "add_note", "arguments": {"name": " ", "text": "x"}}},
+  {"note": "R14 create_note (single call; race needs concurrency)", "method": "tools/call", "params": {"name": "create_note", "arguments": {"text": "x"}}},
+  {"note": "not-a-finding: connect_db (unexpected exception, masked on 2.x)", "method": "tools/call", "params": {"name": "connect_db", "arguments": {}}},
+  {"note": "R4 load_config (str(e) in ToolError)", "method": "tools/call", "params": {"name": "load_config", "arguments": {}}},
+  {"note": "R2 check_backend (MCPError in tool)", "method": "tools/call", "params": {"name": "check_backend", "arguments": {}}},
+  {"note": "not-a-finding: strict_lookup (isError= alias on 2.x)", "method": "tools/call", "params": {"name": "strict_lookup", "arguments": {"name": "missing"}}},
+  {"note": "R6 lookup_or_default (reads .isError on 2.x; missing note)", "method": "tools/call", "params": {"name": "lookup_or_default", "arguments": {"name": "missing"}}},
+  {"note": "R6 lookup_or_default (existing note -- fails too)", "method": "tools/call", "params": {"name": "lookup_or_default", "arguments": {"name": "welcome"}}},
+  {"note": "R11 read_file (traversal attempt)", "method": "tools/call", "params": {"name": "read_file", "arguments": {"relative": "../../secrets.txt"}}},
+  {"note": "not-a-finding: debug_echo (print in handler, diverted on 2.x)", "method": "tools/call", "params": {"name": "debug_echo", "arguments": {"msg": "hi"}}},
+  {"note": "not-a-finding: debug_echo (~9 KB message; same test that loses a response on 1.x)", "method": "tools/call", "params": {"name": "debug_echo", "arguments": {"msg": "0123456789"}}, "repeat_args": {"msg": 900}},
+  {"note": "follow-up: is the session still usable?", "method": "tools/call", "params": {"name": "get_note", "arguments": {"name": "welcome"}}},
+  {"note": "R8 log_something (deprecated ctx.info)", "method": "tools/call", "params": {"name": "log_something", "arguments": {}}},
+  {"note": "R13 notes:// resource (missing -> empty)", "method": "resources/read", "params": {"uri": "notes://missing"}},
+  {"note": "R13 archive:// resource (plain ResourceError)", "method": "resources/read", "params": {"uri": "archive://missing"}},
+  {"note": "control: resource (exists)", "method": "resources/read", "params": {"uri": "notes://welcome"}},
+  {"note": "control: unknown tool", "method": "tools/call", "params": {"name": "no_such_tool", "arguments": {}}}
+]

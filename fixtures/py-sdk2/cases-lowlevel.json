@@ -1,0 +1,5 @@
+[
+  {"note": "control: stock (known item)", "method": "tools/call", "params": {"name": "stock", "arguments": {"item": "apple"}}},
+  {"note": "R5 stock (unknown item -> KeyError escapes handler)", "method": "tools/call", "params": {"name": "stock", "arguments": {"item": "pear"}}},
+  {"note": "R3/R5 stock (argument missing -- never validated)", "method": "tools/call", "params": {"name": "stock", "arguments": {}}}
+]
