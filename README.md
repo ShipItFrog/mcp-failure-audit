@@ -12,7 +12,7 @@ This plugin reads your server's source, works out which SDK and version it uses,
 
 ## What it checks
 
-The full list with sources is in [skills/audit/rules.md](skills/audit/rules.md). In short:
+The full rule set, with sources and the evidence behind each rule, is in [agents/auditor.md](agents/auditor.md#audit-rules). It is part of the auditor's own instructions, so an installed copy never needs to read files outside the project it audits. In short:
 
 - Errors returned as "successful" results instead of raised as tool errors
 - Exceptions that surface as protocol errors the model never sees
