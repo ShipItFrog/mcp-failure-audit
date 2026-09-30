@@ -8,7 +8,7 @@ Everything this plugin claims should be traceable to a row in this file. Rows ma
 |---|---|
 | Claude Code | 2.1.284 |
 | OS | Windows 11 |
-| Plugin version | 0.1.0-dev |
+| Plugin version | 0.1.1 (accuracy runs in section 3: 0.1.0-dev) |
 
 ## 1. Packaging and install paths
 
@@ -17,10 +17,10 @@ Everything this plugin claims should be traceable to a row in this file. Rows ma
 | P1 | `claude plugin validate --strict` on both manifests | local, 2026-09-30 | pass | Run on the repo root, `validate` only checks `marketplace.json`. The plugin manifest has to be validated separately: `claude plugin validate .claude-plugin/plugin.json --strict`. Both pass. |
 | P1b | `claude plugin tag . --dry-run` (plugin.json and marketplace entry agree) | local, 2026-09-30 | pass | Would tag `mcp-failure-audit--v0.1.0`. |
 | P2 | Load for development with `--plugin-dir` | local, 2026-09-30 | pass | `plugin details` lists 1 skill (`audit`) and 1 agent (`auditor`); always-on cost about 199 tokens. Invoked 8 times non-interactively (section 3). |
-| P3 | Fresh install from GitHub in a clean config directory | clean `CLAUDE_CONFIG_DIR` | pending | |
-| P4 | Skill invokes the auditor subagent | `--plugin-dir`, 8 runs, 2026-09-30 | pass | Every run returned the auditor's structured report. Still to repeat after a clean install (P3). |
-| P5 | Update to a new version | clean install | pending | |
-| P6 | Uninstall and remove the marketplace | clean install | pending | |
+| P3 | Fresh install from GitHub in a clean config directory, using the README's commands | new empty `CLAUDE_CONFIG_DIR`, fresh login, 2026-09-30 | pass | `marketplace add ShipItFrog/mcp-failure-audit` and `install mcp-failure-audit@shipitfrog --scope user` both succeeded; `plugin details` shows 1 skill and 1 agent. The user's normal Claude Code config (`~/.claude.json`, plugin registry) was untouched. |
+| P4 | Installed plugin runs a real audit | clean install | **fail on 0.1.0 → fixed in 0.1.1** | On 0.1.0 the auditor could not read its own rule file: installed plugins live in the config's plugin cache, outside the audited project, so the read was denied (it would prompt the user in interactive mode). The `--plugin-dir` runs in section 3 passed `--add-dir` for the plugin folder, which hid this. 0.1.1 builds the rules into the agent's instructions: 0 permission denials, and the 1.x fixture scored 13/13 with 0 false positives. |
+| P5 | Update to a new version | clean install, 2026-09-30 | pass | With 0.1.0 installed, pushed 0.1.1 (tag `mcp-failure-audit--v0.1.1`), then `marketplace update` + `plugin update` → "updated from 0.1.0 to 0.1.1". On an unchanged version, `update` reports "already at the latest version". |
+| P6 | Uninstall and remove the marketplace | clean install, 2026-09-30 | pass | `plugin uninstall` and `marketplace remove` both succeeded; `plugin list` shows no plugins. |
 
 ## 2. Rule evidence (runtime behavior of the SDKs)
 
@@ -42,7 +42,7 @@ Each rule's runtime claim was checked against the installed SDK source (1.30.0 a
 
 ### How the runs were done
 
-- **Invocation:** `claude -p "/mcp-failure-audit:audit ." --plugin-dir <plugin> --add-dir <plugin>`, run from the target folder. `<plugin>` was a copy holding only the plugin files, so the auditor could not see the answer key. Claude Code 2.1.284, default model, **two runs per target**.
+- **Invocation:** `claude -p "/mcp-failure-audit:audit ." --plugin-dir <plugin> --add-dir <plugin>`, run from the target folder. `<plugin>` was a copy holding only the plugin files, so the auditor could not see the answer key. Claude Code 2.1.284, default model, **two runs per target**. Note: `--add-dir` gave the auditor read access to the plugin folder, which a real install does not have; that hid the P4 failure fixed in 0.1.1. The rule text itself was the same, and the clean-install run of 0.1.1 is scored in the same table.
 - **Fixtures** were audited as label-stripped copies made by `fixtures/make_blind.py`: comments and module docstrings removed, neutral file and server names, written outside the repo.
 - **Scoring:** fixture runs against `fixtures/EXPECTED.md`. On the real servers, every finding was checked against the source and the installed SDK by **two independent verifiers**. Each real server also got an **independent audit** by a reviewer who never saw the plugin's reports, to catch misses.
 - **Raw reports:** `test-runs/2026-09-30/` (local paths scrubbed; a trailing environment notice unrelated to the audit removed).
@@ -60,8 +60,9 @@ Each rule's runtime claim was checked against the installed SDK source (1.30.0 a
 | | 2 | 4 | 4 | 0 | Reported two of them as one finding |
 | **fetch** (third party, SDK 1.x low-level) | 1 | 5 | 5 | 0 | Plus 1 disputed (see below) |
 | | 2 | 5 | 4 | 1 | Missed the R4 finding on `call_tool` |
+| Fixture, SDK 1.x — **installed 0.1.1**, clean config, no extra permissions | 1 | 13 | 13 | 0 | All 3 decoys left alone (see P4) |
 
-**Fixtures:** 56 of 56 expected findings across four runs, 0 false positives, and no decoy flagged above the allowed severity.
+**Fixtures:** 56 of 56 expected findings across the four `--plugin-dir` runs, plus 13 of 13 from the clean install. 0 false positives, and no decoy flagged above the allowed severity.
 **Real servers:** 17 of 18 known defects across four runs. Of 18 rated findings, 16 were confirmed by both verifiers, 1 was a false positive, and 1 is disputed.
 
 ### Target A: mcp-flashcards — found, fixed, verified
@@ -93,7 +94,8 @@ The auditor also noticed that the lock file pins `mcp` 1.29.0, not the 1.30.0 ba
 ## 4. Known limitations and what breaks
 
 - **Run-to-run variance.** One of the two `fetch` runs missed a finding and added a false positive. For an audit that matters, run it twice and merge the results; each extra run costs about US$1.
-- **Findings are sometimes merged.** Two defects of the same kind in different tools can come back as one finding.
+- **Findings are sometimes merged, and counts can be off.** Two defects of the same kind in different tools can come back as one finding. In the clean-install run, the auditor's summary line said 11 findings while its list had 13; the skill flagged the mismatch when relaying the report. Trust the list, not the summary line.
+- **Cost per audit.** Since 0.1.1 the rules are part of the auditor's instructions, which adds about 10,500 tokens each time an audit runs (on top of reading the target's code). The always-on cost in every session is unchanged at about 200 tokens.
 - **Report language follows the project's Claude Code instructions.** Both mcp-flashcards runs came back in Chinese, because that folder sits under a directory whose `CLAUDE.md` asks for Chinese replies. The other six runs, started from folders without such instructions, were in English.
 - **Verified SDK versions:** runtime claims were checked on `mcp` 1.30.0 and 2.2.0. For other versions the auditor lists version-dependent behavior under "Could not verify".
 - **Not covered yet:** TypeScript servers. R12 (HTTP transport) has no runtime fixture; it rests on reading the SDK source only. The R14 race is also source-only, because a single-call probe can't show it.

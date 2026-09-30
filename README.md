@@ -2,7 +2,7 @@
 
 A Claude Code plugin that audits MCP server code for **silent failures**: the bugs that don't crash anything, but make your server lie to the model.
 
-> **Status: v0.1.0-dev.** The rule set is complete and checked against the real SDKs (1.30.0 and 2.2.0). In accuracy tests, the auditor found 56 of 56 planted defects with no false positives, and 17 of 18 known defects in two real servers, including one it helped find and fix in my own server. The clean-install test is next. See [TEST-LOG.md](TEST-LOG.md) for how every number was measured.
+> **Status: v0.1.1.** The rule set is checked against the real SDKs (1.30.0 and 2.2.0). In accuracy tests, the auditor found every planted defect with no false positives, and 17 of 18 known defects in two real servers, including one it helped find and fix in my own server. Install, update and uninstall were tested from GitHub in a clean Claude Code config. See [TEST-LOG.md](TEST-LOG.md) for how every number was measured.
 
 ## Why
 
