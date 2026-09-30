@@ -1,0 +1,14 @@
+{
+  "name": "shipitfrog",
+  "owner": {
+    "name": "ShipItFrog"
+  },
+  "description": "Claude Code plugins by ShipItFrog.",
+  "plugins": [
+    {
+      "name": "mcp-failure-audit",
+      "source": "./",
+      "description": "Audits MCP server code for silent failures: swallowed errors, exceptions the model never sees, stdout corruption, and hardcoded secrets or paths."
+    }
+  ]
+}

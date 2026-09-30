@@ -1,0 +1,11 @@
+{
+  "name": "mcp-failure-audit",
+  "version": "0.1.0",
+  "description": "Audits MCP server code for silent failures: swallowed errors, exceptions the model never sees, stdout corruption, and hardcoded secrets or paths.",
+  "author": {
+    "name": "ShipItFrog"
+  },
+  "repository": "https://github.com/ShipItFrog/mcp-failure-audit",
+  "license": "MIT",
+  "keywords": ["mcp", "audit", "error-handling", "code-review"]
+}

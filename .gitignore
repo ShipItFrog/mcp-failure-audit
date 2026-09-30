@@ -1,0 +1,28 @@
+# Secrets — never commit
+# (kept narrow on purpose: test fixtures named e.g. hardcoded_secret_server.py must NOT be ignored;
+#  the pre-commit secret scan is the real guard)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local Claude Code state
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Eval run output (claude plugin eval writes here by default)
+evals/results/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+*.log
