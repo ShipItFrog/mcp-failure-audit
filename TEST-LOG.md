@@ -94,7 +94,7 @@ The auditor also noticed that the lock file pins `mcp` 1.29.0, not the 1.30.0 ba
 
 - **Run-to-run variance.** One of the two `fetch` runs missed a finding and added a false positive. For an audit that matters, run it twice and merge the results; each extra run costs about US$1.
 - **Findings are sometimes merged.** Two defects of the same kind in different tools can come back as one finding.
-- **Report language follows the user's Claude Code settings.** One of the eight runs came back in Chinese.
+- **Report language follows the project's Claude Code instructions.** Both mcp-flashcards runs came back in Chinese, because that folder sits under a directory whose `CLAUDE.md` asks for Chinese replies. The other six runs, started from folders without such instructions, were in English.
 - **Verified SDK versions:** runtime claims were checked on `mcp` 1.30.0 and 2.2.0. For other versions the auditor lists version-dependent behavior under "Could not verify".
 - **Not covered yet:** TypeScript servers. R12 (HTTP transport) has no runtime fixture; it rests on reading the SDK source only. The R14 race is also source-only, because a single-call probe can't show it.
 - **Validation blind spot (packaging):** in a one-plugin repo that is also its own marketplace, `claude plugin validate .` reports "Validation passed" after checking only the marketplace manifest. A broken `plugin.json` would not be caught by that command alone. Mitigation: validate both manifests (see P1).
