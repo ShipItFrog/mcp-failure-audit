@@ -16,9 +16,9 @@ Everything this plugin claims should be traceable to a row in this file. Rows ma
 |---|---|---|---|---|
 | P1 | `claude plugin validate --strict` on both manifests | local, 2026-09-30 | pass | Run on the repo root, `validate` only checks `marketplace.json`. The plugin manifest has to be validated separately: `claude plugin validate .claude-plugin/plugin.json --strict`. Both pass. |
 | P1b | `claude plugin tag . --dry-run` (plugin.json and marketplace entry agree) | local, 2026-09-30 | pass | Would tag `mcp-failure-audit--v0.1.0`. |
-| P2 | Load for development with `--plugin-dir` | local, 2026-09-30 | partial | `claude --plugin-dir . plugin details mcp-failure-audit` lists 1 skill (`audit`) and 1 agent (`auditor`); always-on cost about 199 tokens. The skill has not been invoked yet. |
+| P2 | Load for development with `--plugin-dir` | local, 2026-09-30 | pass | `plugin details` lists 1 skill (`audit`) and 1 agent (`auditor`); always-on cost about 199 tokens. Invoked 8 times non-interactively (section 3). |
 | P3 | Fresh install from GitHub in a clean config directory | clean `CLAUDE_CONFIG_DIR` | pending | |
-| P4 | Skill invokes the auditor subagent | clean install | pending | |
+| P4 | Skill invokes the auditor subagent | `--plugin-dir`, 8 runs, 2026-09-30 | pass | Every run returned the auditor's structured report. Still to repeat after a clean install (P3). |
 | P5 | Update to a new version | clean install | pending | |
 | P6 | Uninstall and remove the marketplace | clean install | pending | |
 
@@ -38,21 +38,63 @@ Each rule's runtime claim was checked against the installed SDK source (1.30.0 a
 | Low-level `on_call_tool` raises `KeyError` | — | JSON-RPC error code 0 with raw text |
 | Missing resource returned as `""` | success, 1 empty item | success, 1 empty item |
 
-## 3. Audit accuracy
+## 3. Audit accuracy (2026-09-30)
 
-### Target A: mcp-flashcards (my own server, SDK 1.x)
+### How the runs were done
 
-| Rule | Expected | Found by plugin | Verdict (true positive / false positive / missed) |
-|---|---|---|---|
-| | | | pending |
+- **Invocation:** `claude -p "/mcp-failure-audit:audit ." --plugin-dir <plugin> --add-dir <plugin>`, run from the target folder. `<plugin>` was a copy holding only the plugin files, so the auditor could not see the answer key. Claude Code 2.1.284, default model, **two runs per target**.
+- **Fixtures** were audited as label-stripped copies made by `fixtures/make_blind.py`: comments and module docstrings removed, neutral file and server names, written outside the repo.
+- **Scoring:** fixture runs against `fixtures/EXPECTED.md`. On the real servers, every finding was checked against the source and the installed SDK by **two independent verifiers**. Each real server also got an **independent audit** by a reviewer who never saw the plugin's reports, to catch misses.
+- **Raw reports:** `test-runs/2026-09-30/` (local paths scrubbed; a trailing environment notice unrelated to the audit removed).
+- **Cost:** 8 runs, US$8.08 in total, 2 to 6.5 minutes each.
 
-### Target B: a third-party public MCP server (not designed by me)
+### Results
 
-| Rule | Expected | Found by plugin | Verdict |
-|---|---|---|---|
-| | | | pending |
+| Target | Run | Defects to find | Found | False positives | Notes |
+|---|---|---|---|---|---|
+| Fixture, SDK 1.x | 1 | 13 | 13 | 0 | All severities in range; all 3 decoys left alone |
+| | 2 | 13 | 13 | 0 | Same |
+| Fixture, SDK 2.x + low-level | 1 | 15 | 15 | 0 | All 7 decoys left alone (one flagged at Low, which the key allows) |
+| | 2 | 15 | 15 | 0 | Same |
+| **mcp-flashcards** (mine, SDK 1.x) | 1 | 4 | 4 | 0 | |
+| | 2 | 4 | 4 | 0 | Reported two of them as one finding |
+| **fetch** (third party, SDK 1.x low-level) | 1 | 5 | 5 | 0 | Plus 1 disputed (see below) |
+| | 2 | 5 | 4 | 1 | Missed the R4 finding on `call_tool` |
+
+**Fixtures:** 56 of 56 expected findings across four runs, 0 false positives, and no decoy flagged above the allowed severity.
+**Real servers:** 17 of 18 known defects across four runs. Of 18 rated findings, 16 were confirmed by both verifiers, 1 was a false positive, and 1 is disputed.
+
+### Target A: mcp-flashcards — found, fixed, verified
+
+Both runs found, and both verifiers confirmed:
+
+- **R1 High:** if `cards.json` wasn't valid JSON, the server moved it aside and answered with an empty deck and `isError: false`, so the model would report the cards as gone. A UTF-8 byte-order mark alone triggered it: files saved by PowerShell 5.1 or some Windows editors start with one, and Python's JSON parser rejects it.
+- **R1 Medium:** `grade_card` / `delete_card` with an unknown id returned `{"ok": false}` as a successful result.
+- **R4 Medium:** file errors reached the model with full local paths.
+
+I reproduced each one by driving the server over stdio, fixed them (mcp-flashcards commit `89d87fa`), and re-ran the same scenarios: BOM, corrupt JSON, unreadable file, unknown id. All of them now return a tool error and leave the file untouched, and a valid file still loads. An older copy of the server that I use day to day had a worse variant: it also treated a locked file as an empty deck, so the next save could overwrite the real cards. The same fix went there.
+
+### Target B: `fetch` from modelcontextprotocol/servers (commit `f46d957`)
+
+Findings confirmed by both verifiers and by the independent audit:
+
+- **R1 Medium** (`server.py:40`): when HTML can't be simplified, the failure text is returned as ordinary page content with `isError: false`.
+- **R4 Medium** (`server.py:224`): the tool does HTTP work and runs readabilipy with no top-level handler, so unexpected exception text reaches the model verbatim on SDK 1.x.
+- **R4 Medium** (`server.py:128`): `repr()` of the httpx exception is put into the error message.
+- **R5 Medium** (`server.py:258`): the `get_prompt` handler only catches `McpError`, so an invalid URL escapes as JSON-RPC error code 0 with the raw text.
+- **R2 Low** (7 sites): `McpError` raised inside the tool path. On 1.x the error code is lost; after a migration to 2.x these would become protocol errors.
+
+Disputed (run 1): **R3** on `start_index` past the end of the content, which returns `<error>No more content available.</error>` as a normal result. One verifier called it a false positive, because it is the tool's own pagination cursor rather than an input check. The other verifier was unsure, and the independent audit reported it the same way the plugin did. I'm counting it as neither.
+
+False positive (run 2): **R3** "an unlisted tool name skips validation". `list_tools` is registered, so 1.x validates input, and the rule doesn't apply.
+
+The auditor also noticed that the lock file pins `mcp` 1.29.0, not the 1.30.0 baseline, and listed the version-dependent behavior under "Could not verify" instead of asserting it. That is the intended behavior.
 
 ## 4. Known limitations and what breaks
 
+- **Run-to-run variance.** One of the two `fetch` runs missed a finding and added a false positive. For an audit that matters, run it twice and merge the results; each extra run costs about US$1.
+- **Findings are sometimes merged.** Two defects of the same kind in different tools can come back as one finding.
+- **Report language follows the user's Claude Code settings.** One of the eight runs came back in Chinese.
+- **Verified SDK versions:** runtime claims were checked on `mcp` 1.30.0 and 2.2.0. For other versions the auditor lists version-dependent behavior under "Could not verify".
+- **Not covered yet:** TypeScript servers. R12 (HTTP transport) has no runtime fixture; it rests on reading the SDK source only. The R14 race is also source-only, because a single-call probe can't show it.
 - **Validation blind spot (packaging):** in a one-plugin repo that is also its own marketplace, `claude plugin validate .` reports "Validation passed" after checking only the marketplace manifest. A broken `plugin.json` would not be caught by that command alone. Mitigation: validate both manifests (see P1).
-- Audit accuracy: pending.
